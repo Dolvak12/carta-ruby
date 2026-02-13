@@ -25,7 +25,8 @@ Diego`,
     // Mobile optimization: relaxed and romantic
     maxPetalsMobile: 50,
     petalIntervalMobile: 400,
-    youtubeId: "mKARuQT1vFM"
+    // URL of the local MP3 file
+    songPath: "assets/song.mp3"
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -147,99 +148,61 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // INTEGRACION YOUTUBE
-    const RELOAD_KEY = 'carta_reload_guard_ts';
-    function safeReload() {
-        const t = Date.now();
-        const prev = parseInt(localStorage.getItem(RELOAD_KEY) || '0', 10);
-        if (t - prev < 10000) return;
-        localStorage.setItem(RELOAD_KEY, String(t));
-        location.reload();
-    }
-    window.onerror = function () { safeReload(); return false; };
-
-    function isInAppBrowser() {
-        const ua = (navigator.userAgent || "").toLowerCase();
-        // Quitamos whatsapp de la lista negra para intentar mostrar el video allí
-        return /instagram|fbav|fban|messenger|line|tiktok|twitter|snapchat/.test(ua);
-    }
-
-    function getLinks(videoId) {
-        const origin = (location.origin && location.origin !== "null")
-            ? `&origin=${encodeURIComponent(location.origin)}`
-            : "";
-
-        // Revert to standard youtube.com and add a dummy origin to bypass local file restrictions
-        const embedUrl =
-            `https://www.youtube.com/embed/${encodeURIComponent(videoId)}` +
-            `?autoplay=1&controls=1&rel=0&playsinline=1&modestbranding=1&enablejsapi=1&iv_load_policy=3` +
-            `&origin=https://www.youtube.com`;
-
-        const watchUrl = `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
-        return { embedUrl, watchUrl };
-    }
+    // NEW: Robust Audio Player using HTML5 Audio
+    let audioInstance = null;
 
     function mountYouTubePlayer() {
         const playSection = document.querySelector('.play-section.compact');
         if (!playSection) return;
 
-        // Si está en navegador interno (p.ej. TikTok/Instagram)
-        if (isInAppBrowser()) {
-            const { watchUrl } = getLinks(CONFIG.youtubeId);
-
-            // Si es clic manual, intentamos abrir
-            if (window.event && window.event.type === 'click') {
-                window.open(watchUrl, '_blank');
-            } else {
-                // Si es carga automática, solo actualizamos la interfaz para avisar
-                const hint = playSection.querySelector('.play-hint');
-                const title = playSection.querySelector('.play-title');
-                if (hint) hint.textContent = "Open on YouTube (Better experience)";
-                if (title) title.textContent = "♪ Click to listen ♪";
-            }
-            return;
-        }
-
-        const { embedUrl } = getLinks(CONFIG.youtubeId);
-        const iframe = document.createElement('iframe');
-        iframe.src = embedUrl;
-        iframe.title = "Nuestra canción";
-        iframe.allow = "autoplay; encrypted-media; picture-in-picture";
-        iframe.allowFullscreen = true;
-        iframe.style.width = "100%";
-        iframe.style.height = "180px";
-        iframe.style.border = "none";
-        iframe.style.borderRadius = "8px";
-        iframe.setAttribute('referrerpolicy', 'no-referrer'); // Critical fix for copyright origin blocks
-        iframe.setAttribute('sandbox', 'allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation allow-presentation'); // Extra compatibility
-
+        // Limpiar sección para el nuevo reproductor
         playSection.innerHTML = '';
+        playSection.style.padding = "15px";
+        playSection.style.background = "rgba(0, 0, 0, 0.4)";
+        playSection.style.backdropFilter = "blur(10px)";
+        playSection.style.borderRadius = "12px";
+        playSection.style.display = "flex";
+        playSection.style.flexDirection = "column";
+        playSection.style.alignItems = "center";
+        playSection.style.justifyContent = "center";
+        playSection.style.minHeight = "120px";
 
         const container = document.createElement('div');
-        container.style.display = 'flex';
-        container.style.flexDirection = 'column';
+        container.style.textAlign = 'center';
         container.style.width = '100%';
-        container.style.overflow = 'hidden';
-        container.style.borderRadius = '8px';
 
-        container.appendChild(iframe);
+        // Información de la canción
+        const songInfo = document.createElement('div');
+        songInfo.style.marginBottom = '10px';
+        songInfo.style.color = 'white';
+        songInfo.style.fontSize = '14px';
+        songInfo.style.fontWeight = 'bold';
+        songInfo.innerHTML = '🎵 Everything Has Changed';
+        container.appendChild(songInfo);
 
-        const { watchUrl } = getLinks(CONFIG.youtubeId);
-        const fallbackDiv = document.createElement('div');
-        fallbackDiv.className = 'yt-fallback-container';
-        fallbackDiv.innerHTML = `
-            <a href="${watchUrl}" target="_blank" class="yt-fallback-link">
-                <span class="yt-icon">📺</span> If it doesn't play, click here
-            </a>
-        `;
-        container.appendChild(fallbackDiv);
+        // Reproductor de audio estándar
+        const audio = document.createElement('audio');
+        audio.src = CONFIG.songPath;
+        audio.controls = true;
+        audio.autoplay = true;
+        audio.style.width = "100%";
+        audio.style.height = "35px";
+        audio.style.borderRadius = "30px";
 
+        // Manejo de errores
+        audio.onerror = () => {
+            songInfo.innerHTML = '<span style="color: #ff4757;">⚠️ Waiting for song.mp3...</span>';
+            const tip = document.createElement('div');
+            tip.style.fontSize = '11px';
+            tip.style.color = '#ddd';
+            tip.style.marginTop = '8px';
+            tip.textContent = 'Please make sure assets/song.mp3 exists';
+            container.appendChild(tip);
+        };
+
+        container.appendChild(audio);
         playSection.appendChild(container);
-
-        playSection.style.padding = "0";
-        playSection.style.background = "black";
-        playSection.style.display = "block";
-        playSection.style.height = "auto";
+        audioInstance = audio;
     }
 
     function resetMusicPlayer() {
