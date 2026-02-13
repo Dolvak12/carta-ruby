@@ -210,7 +210,8 @@ document.addEventListener('DOMContentLoaded', () => {
         iframe.style.height = "180px";
         iframe.style.border = "none";
         iframe.style.borderRadius = "8px";
-        iframe.setAttribute('referrerpolicy', 'origin-when-cross-origin');
+        iframe.setAttribute('referrerpolicy', 'no-referrer'); // Critical fix for copyright origin blocks
+        iframe.setAttribute('sandbox', 'allow-forms allow-scripts allow-pointer-lock allow-same-origin allow-top-navigation allow-presentation'); // Extra compatibility
 
         playSection.innerHTML = '';
 
