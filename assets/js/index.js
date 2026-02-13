@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
         songInfo.style.color = 'white';
         songInfo.style.fontSize = '14px';
         songInfo.style.fontWeight = 'bold';
-        songInfo.innerHTML = '🎵 Everything Has Changed';
+        songInfo.innerHTML = '🎵 Everything Has Changed <br> <small style="font-weight: normal; opacity: 0.8;">pero contigo a mi lado es mejor</small>';
         container.appendChild(songInfo);
 
         // Reproductor de audio estándar
